@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { DateTime } from "luxon"
 
 const FTC_API_BASE = "https://ftc-api.firstinspires.org/v2.0"
 
@@ -11,6 +12,7 @@ interface Event {
   city: string
   stateprov: string
   country: string
+  timezone: string
 }
 
 export async function GET() {
@@ -38,6 +40,14 @@ export async function GET() {
 
     const data = await response.json()
     const allEvents = data.events || []
+    
+    allEvents.forEach((event: Event) => {
+      const eventStart = DateTime.fromISO(event.dateStart, { zone: event.timezone })
+      event.dateStart = eventStart.toUTC().toISO() ?? event.dateStart
+
+      const eventEnd = DateTime.fromISO(event.dateEnd, { zone: event.timezone }).endOf("day")
+      event.dateEnd = eventEnd.toUTC().toISO() ?? event.dateEnd
+    });
 
     // Filter for upcoming and current events
     const now = new Date()
